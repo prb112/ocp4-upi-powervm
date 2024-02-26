@@ -290,58 +290,58 @@ resource "null_resource" "bastion_packages" {
   }
 }
 
-resource "openstack_blockstorage_volume_v3" "storage_volume" {
-  count = var.storage_type == "nfs" ? 1 : 0
+# resource "openstack_blockstorage_volume_v2" "storage_volume" {
+#   count = var.storage_type == "nfs" ? 1 : 0
 
-  name        = "${var.cluster_id}-${var.storage_type}-storage-vol"
-  size        = var.volume_size
-  volume_type = var.volume_storage_template
-}
+#   name        = "${var.cluster_id}-${var.storage_type}-storage-vol"
+#   size        = var.volume_size
+#   volume_type = var.volume_storage_template
+# }
 
-resource "openstack_compute_volume_attach_v2" "storage_v_attach" {
-  depends_on = [null_resource.bastion_init]
-  count      = var.storage_type == "nfs" ? 1 : 0
+# resource "openstack_compute_volume_attach_v2" "storage_v_attach" {
+#   depends_on = [null_resource.bastion_init]
+#   count      = var.storage_type == "nfs" ? 1 : 0
 
-  volume_id   = openstack_blockstorage_volume_v3.storage_volume[count.index].id
-  instance_id = openstack_compute_instance_v2.bastion[count.index].id
-}
+#   volume_id   = openstack_blockstorage_volume_v2.storage_volume[count.index].id
+#   instance_id = openstack_compute_instance_v2.bastion[count.index].id
+# }
 
-locals {
-  disk_config = {
-    volume_size = var.volume_size
-    disk_name   = "disk/pv-storage-disk"
-  }
-  storage_path = "/export"
-}
+# locals {
+#   disk_config = {
+#     volume_size = var.volume_size
+#     disk_name   = "disk/pv-storage-disk"
+#   }
+#   storage_path = "/export"
+# }
 
-resource "null_resource" "setup_nfs_disk" {
-  count      = var.storage_type == "nfs" ? 1 : 0
-  depends_on = [openstack_compute_volume_attach_v2.storage_v_attach]
+# resource "null_resource" "setup_nfs_disk" {
+#   count      = var.storage_type == "nfs" ? 1 : 0
+#   depends_on = [openstack_compute_volume_attach_v2.storage_v_attach]
 
-  connection {
-    type         = "ssh"
-    user         = var.rhel_username
-    host         = openstack_compute_instance_v2.bastion[count.index].access_ip_v4
-    private_key  = var.private_key
-    agent        = var.ssh_agent
-    timeout      = "${var.connection_timeout}m"
-    bastion_host = var.jump_host
-  }
-  provisioner "file" {
-    content     = templatefile("${path.module}/templates/create_disk_link.sh", local.disk_config)
-    destination = "/tmp/create_disk_link.sh"
-  }
-  provisioner "remote-exec" {
-    inline = [
-      "sudo rm -rf mkdir ${local.storage_path}; sudo mkdir -p ${local.storage_path}; sudo chmod -R 755 ${local.storage_path}",
-      "sudo chmod +x /tmp/create_disk_link.sh",
-      # Fix for copying file from Windows OS having CR,
-      "sudo sed -i 's/\r//g' /tmp/create_disk_link.sh",
-      "sudo /tmp/create_disk_link.sh",
-      "sudo mkfs.xfs /dev/${local.disk_config.disk_name}",
-      "MY_DEV_UUID=$(sudo blkid -o export /dev/${local.disk_config.disk_name} | awk '/UUID/{ print }')",
-      "echo \"$MY_DEV_UUID ${local.storage_path} xfs defaults 0 0\" | sudo tee -a /etc/fstab > /dev/null",
-      "sudo mount ${local.storage_path}",
-    ]
-  }
-}
+#   connection {
+#     type         = "ssh"
+#     user         = var.rhel_username
+#     host         = openstack_compute_instance_v2.bastion[count.index].access_ip_v4
+#     private_key  = var.private_key
+#     agent        = var.ssh_agent
+#     timeout      = "${var.connection_timeout}m"
+#     bastion_host = var.jump_host
+#   }
+#   provisioner "file" {
+#     content     = templatefile("${path.module}/templates/create_disk_link.sh", local.disk_config)
+#     destination = "/tmp/create_disk_link.sh"
+#   }
+#   provisioner "remote-exec" {
+#     inline = [
+#       "sudo rm -rf mkdir ${local.storage_path}; sudo mkdir -p ${local.storage_path}; sudo chmod -R 755 ${local.storage_path}",
+#       "sudo chmod +x /tmp/create_disk_link.sh",
+#       # Fix for copying file from Windows OS having CR,
+#       "sudo sed -i 's/\r//g' /tmp/create_disk_link.sh",
+#       "sudo /tmp/create_disk_link.sh",
+#       "sudo mkfs.xfs /dev/${local.disk_config.disk_name}",
+#       "MY_DEV_UUID=$(sudo blkid -o export /dev/${local.disk_config.disk_name} | awk '/UUID/{ print }')",
+#       "echo \"$MY_DEV_UUID ${local.storage_path} xfs defaults 0 0\" | sudo tee -a /etc/fstab > /dev/null",
+#       "sudo mount ${local.storage_path}",
+#     ]
+#   }
+# }
