@@ -39,6 +39,19 @@ data "ignition_config" "master" {
   systemd = data.ignition_systemd_unit.ramdisk.*.rendered
 }
 
+data "ignition_file" "b_resolv" {
+  overwrite = true
+  mode      = "420" // 0644
+  path      = "/etc/resolv.conf"
+  content {
+    mime    = "text/plain"
+    content = <<EOF
+search ${var.cluster_id}.powervs-openshift-ipi.cis.ibm.net
+nameserver ${var.bastion_ip}
+EOF
+  }
+}
+
 data "ignition_file" "m_hostname" {
   count     = var.master["count"]
   overwrite = true
@@ -79,7 +92,7 @@ resource "openstack_compute_instance_v2" "master" {
   availability_zone = lookup(var.master, "availability_zone", var.openstack_availability_zone)
 
   user_data = data.ignition_config.master[count.index].rendered
-
+  config_drive = true
   network {
     port = var.master_port_ids[count.index]
   }

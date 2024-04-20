@@ -61,6 +61,24 @@ resource "openstack_compute_instance_v2" "bastion" {
     port = var.bastion_port_ids[count.index]
   }
   availability_zone = lookup(var.bastion, "availability_zone", var.openstack_availability_zone)
+
+   personality {
+     file    = "/etc/cloud/cloud.cfg"
+     content = file("${path.cwd}/modules/1_bastion/files/userdata.cfg")
+   }
+
+  personality {
+    file    = "/root/.ssh/id_rsa"
+    content = file("${path.cwd}/data/id_rsa")
+  }
+
+    personality {
+    file    = "/root/.ssh/id_rsa.pub"
+    content = file("${path.cwd}/data/id_rsa.pub")
+  }
+
+  user_data       = file("${path.cwd}/modules/1_bastion/files/userdata.cfg")
+  config_drive = true
 }
 
 locals {
@@ -191,7 +209,7 @@ else
     sudo subscription-manager register --org='${var.rhel_subscription_org}' --activationkey='${var.rhel_subscription_activationkey}' --force
 fi
 sudo subscription-manager refresh
-sudo subscription-manager attach --auto
+#sudo subscription-manager attach --auto
 
 EOF
     ]

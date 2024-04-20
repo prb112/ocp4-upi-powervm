@@ -31,6 +31,19 @@ data "ignition_config" "bootstrap" {
   files = [data.ignition_file.b_hostname.rendered]
 }
 
+data "ignition_file" "b_resolv" {
+  overwrite = true
+  mode      = "420" // 0644
+  path      = "/etc/resolv.conf"
+  content {
+    mime    = "text/plain"
+    content = <<EOF
+search ${var.cluster_id}.powervs-openshift-ipi.cis.ibm.net
+nameserver ${var.bastion_ip}
+EOF
+  }
+}
+
 data "ignition_file" "b_hostname" {
   overwrite = true
   mode      = "420" // 0644
@@ -71,6 +84,7 @@ resource "openstack_compute_instance_v2" "bootstrap" {
   availability_zone = lookup(var.bootstrap, "availability_zone", var.openstack_availability_zone)
 
   user_data = data.ignition_config.bootstrap.rendered
+  config_drive = true
 
   network {
     port = var.bootstrap_port_id

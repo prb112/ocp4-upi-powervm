@@ -10,7 +10,7 @@ network_name = "<network_name>"
 
 ### OpenShift Cluster Details
 
-bastion   = { instance_type = "<bastion-compute-template>", image_id = "<image-uuid-rhel>", "count" = 1 }
+bastion   = { instance_type = "<bastion-compute-template>", image_id = "<image-uuid-rhel>", "count" = 1, }
 bootstrap = { instance_type = "<bootstrap-compute-template>", image_id = "<image-uuid-rhcos>", "count" = 1 }
 master    = { instance_type = "<master-compute-template>", image_id = "<image-uuid-rhcos>", "count" = 3 }
 worker    = { instance_type = "<worker-compute-template>", image_id = "<image-uuid-rhcos>", "count" = 2 }

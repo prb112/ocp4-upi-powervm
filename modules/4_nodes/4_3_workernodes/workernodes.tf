@@ -74,7 +74,7 @@ resource "openstack_compute_instance_v2" "worker" {
   availability_zone = lookup(var.worker, "availability_zone", var.openstack_availability_zone)
 
   user_data = data.ignition_config.worker[count.index].rendered
-
+  config_drive = true
   network {
     port = var.worker_port_ids[count.index]
   }
